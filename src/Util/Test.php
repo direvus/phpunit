@@ -469,6 +469,10 @@ class Test
     /**
      * Returns the provided data for a method.
      *
+     * The named dataProvider may be either a method, a property, or a class
+     * constant, in that order.  A named method or property can be static or
+     * non-static.
+     *
      * @param string $docComment
      * @param string $className
      * @param string $methodName
@@ -486,7 +490,7 @@ class Test
             foreach ($matches[1] as $match) {
                 $dataProviderMethodNameNamespace = \explode('\\', $match);
                 $leaf                            = \explode('::', \array_pop($dataProviderMethodNameNamespace));
-                $dataProviderMethodName          = \array_pop($leaf);
+                $target                          = \array_pop($leaf);
 
                 if (!empty($dataProviderMethodNameNamespace)) {
                     $dataProviderMethodNameNamespace = \implode('\\', $dataProviderMethodNameNamespace) . '\\';
@@ -501,20 +505,36 @@ class Test
                 }
 
                 $dataProviderClass  = new ReflectionClass($dataProviderClassName);
-                $dataProviderMethod = $dataProviderClass->getMethod(
-                    $dataProviderMethodName
-                );
+                if ($dataProviderClass->hasMethod($target)) {
+                    $dataProviderMethod = $dataProviderClass->getMethod(
+                        $target
+                    );
 
-                if ($dataProviderMethod->isStatic()) {
-                    $object = null;
-                } else {
-                    $object = $dataProviderClass->newInstance();
-                }
+                    if ($dataProviderMethod->isStatic()) {
+                        $object = null;
+                    } else {
+                        $object = $dataProviderClass->newInstance();
+                    }
 
-                if ($dataProviderMethod->getNumberOfParameters() == 0) {
-                    $data = $dataProviderMethod->invoke($object);
+                    if ($dataProviderMethod->getNumberOfParameters() == 0) {
+                        $data = $dataProviderMethod->invoke($object);
+                    } else {
+                        $data = $dataProviderMethod->invoke($object, $methodName);
+                    }
+                } elseif ($dataProviderClass->hasProperty($target)) {
+                    $property = $dataProviderClass->getProperty($target);
+                    if ($property->isStatic()) {
+                        $data = $property->getValue();
+                    } else {
+                        $object = $dataProviderClass->newInstance();
+                        $data = $property->getValue($object);
+                    }
+                } elseif ($dataProviderClass->hasConstant($target)) {
+                    $data = $dataProviderClass->getConstant($target);
                 } else {
-                    $data = $dataProviderMethod->invoke($object, $methodName);
+                    throw new Exception(
+                        "The data provider '$match' cannot be resolved as a method, property or constant."
+                    );
                 }
 
                 if ($data instanceof Iterator) {
