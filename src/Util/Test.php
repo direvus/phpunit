@@ -527,7 +527,7 @@ class Test
                         $data = $property->getValue();
                     } else {
                         $object = $dataProviderClass->newInstance();
-                        $data = $property->getValue($object);
+                        $data   = $property->getValue($object);
                     }
                 } elseif ($dataProviderClass->hasConstant($target)) {
                     $data = $dataProviderClass->getConstant($target);
