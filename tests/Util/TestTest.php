@@ -613,6 +613,30 @@ class TestTest extends TestCase
         $this->assertEquals(3, $cCount);
     }
 
+    public function testPropertyDataProvider()
+    {
+        $data = Test::getProvidedData(\DataProviderPropertyTest::class, 'testProviderStaticProperty');
+        $this->assertSame(4, \count($data));
+        foreach ($data as $args) {
+            $this->assertSame($args[2], $args[0] + $args[1]);
+        }
+
+        $data = Test::getProvidedData(\DataProviderPropertyTest::class, 'testProviderProperty');
+        $this->assertSame(4, \count($data));
+        foreach ($data as $args) {
+            $this->assertSame($args[2], $args[0] + $args[1]);
+        }
+    }
+
+    public function testConstantDataProvider()
+    {
+        $data = Test::getProvidedData(\DataProviderConstantTest::class, 'testProviderConstant');
+        $this->assertSame(4, \count($data));
+        foreach ($data as $args) {
+            $this->assertSame($args[2], $args[0] + $args[1]);
+        }
+    }
+
     public function testTestWithEmptyAnnotation()
     {
         $result = Test::getDataFromTestWithAnnotation("/**\n * @anotherAnnotation\n */");
